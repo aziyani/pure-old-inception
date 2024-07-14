@@ -1,0 +1,67 @@
+services:
+ nginx:
+  image: nginx
+  container_name: nginx
+  depends_on:
+   - mariadb
+   - wordpress
+  build:
+   context: ./requirements/nginx # the path where the Docker file is located that contain instructions to build the image
+   dockerfile: Dockerfile
+  volumes:
+   - wordpress:/var/www/html # mount the volume to the container to store the wordpress files in the container "perspective of the container"
+  ports:
+   - "443:443" # expose the port 443 of the container to the host
+  networks:
+   - inception
+  restart: always # restart the container always if it crush or stops somehow
+
+ mariadb:
+  image: mariadb
+  container_name: mariadb
+  build:
+   context: ./requirements/mariadb
+   dockerfile: Dockerfile
+  env_file:
+   - ./.env
+  volumes:
+   - mariadb:/var/lib/mysql
+  networks:
+   - inception
+  restart: always
+
+ wordpress:
+  image: wordpress
+  container_name: wordpress
+  depends_on:
+   - mariadb
+  build:
+   context: ./requirements/wordpress
+   dockerfile: Dockerfile
+  env_file:
+   - ./.env
+  volumes:
+   - wordpress:/var/www/html
+  networks:
+   - inception
+  restart: always
+
+
+networks:
+ inception:
+  name: inception
+  driver: bridge # bridge = all of containers that are in the same network can communicate with each other
+
+volumes:
+ mariadb:
+  name: mariadb
+  driver_opts:
+   type: none
+   o: bind
+   device: /home/aziyani/data/mariadb # the path where the mariadb files will be stored in the host machine "perspective of the host machine"
+ wordpress:
+  name: wordpress # the name of the volume
+  driver_opts:
+   type: none
+   o : bind
+   device : /home/aziyani/data/wordpress # the path where the wordpress files will be stored in the host machine "perspective of the host machine"
